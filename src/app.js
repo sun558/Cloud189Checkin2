@@ -33,14 +33,17 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // 任务 1.签到
 const doUserTask = async (cloudClient,index) => {
 	if(index < accountPerson){
-		const result = [];
-		const res1 = await cloudClient.userSign();
-		result.push(
-				'个人'+`${res1.isSign ? "已签到过" : ""}获得：${res1.netdiskBonus}M`
-	);
-		await delay(5000); // 延迟5秒
+		const tasks = Array.from({ length: execThreshold }, () =>
+			cloudClient.userSign()
+			);
+		const result = (await Promise.all(tasks)).map(
+			(res) =>
+			`个人${res.isSign ? "已签到过" : ""}获得: ${
+					res.netdiskBonus
+			}M`
+			);
 		return result;
-	}else{		
+	}else{
 		return "";
 	}
 };
@@ -66,7 +69,6 @@ const doFamilyTask = async (cloudClient) => {
     } else {
       familyId = familyInfoResp[0].familyId;
     }
-    logger.info(`执行家庭签到ID:${familyId}`);
     const tasks = Array.from({ length: execThreshold }, () =>
       cloudClient.familyUserSign(familyId)
     );
@@ -236,7 +238,30 @@ async function main() {
     }
   }
 	
-	//主账号家庭详情
+	
+
+  //数据汇总
+  for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap) {
+    const userNameInfo = mask(userName, 3, 7);
+    const afterUserSizeInfo = await cloudClient.getUserSizeInfo();
+    logger.log(`账户 ${userNameInfo}实际容量变化:`);
+    logger.log(
+      `个人总容量增加：${(
+        (afterUserSizeInfo.cloudCapacityInfo.totalSize -
+          userSizeInfo.cloudCapacityInfo.totalSize) /
+        1024 /
+        1024
+      ).toFixed(2)}M,家庭容量增加：${(
+        (afterUserSizeInfo.familyCapacityInfo.totalSize -
+          userSizeInfo.familyCapacityInfo.totalSize) /
+        1024 /
+        1024
+      ).toFixed(2)}M`
+    );
+  }
+  logger.log(' ');
+  
+  //主账号家庭详情
 	for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap){
 	   if(mainAccountCount < accountPerson){
 	        const userNameInfo = mask(userName, 3, 7);
@@ -277,34 +302,26 @@ async function main() {
 			1024
 		).toFixed(2)}M`
 		);
-		logger.log(' ');
 		 mainAccountCount++;
 	   }else{
 			break;
 	   }
 	}
-	
-  
+}
 
-  //数据汇总
-  for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap) {
-    const userNameInfo = mask(userName, 3, 7);
-    const afterUserSizeInfo = await cloudClient.getUserSizeInfo();
-    logger.log(`账户 ${userNameInfo}实际容量变化:`);
-    logger.log(
-      `个人总容量增加：${(
-        (afterUserSizeInfo.cloudCapacityInfo.totalSize -
-          userSizeInfo.cloudCapacityInfo.totalSize) /
-        1024 /
-        1024
-      ).toFixed(2)}M,家庭容量增加：${(
-        (afterUserSizeInfo.familyCapacityInfo.totalSize -
-          userSizeInfo.familyCapacityInfo.totalSize) /
-        1024 /
-        1024
-      ).toFixed(2)}M`
-    );
+function getLineIndex(str, lineIndex) {
+  // 参数校验
+  if (typeof str !== 'string' || !Number.isInteger(lineIndex)) {
+    return '';
   }
+
+  // 单次分割处理（兼容不同系统换行符）
+  const lines = str.split(/\r?\n/);
+  
+  // 处理边界情况
+  return lineIndex >= 0 && lineIndex < lines.length 
+    ? String(lines[lineIndex]).trim() // 移除前后空格
+    : '';
 }
 
 (async () => {
@@ -313,7 +330,8 @@ async function main() {
   } finally {
     const events = recording.replay();
     const content = events.map((e) => `${e.data.join("")}`).join("  \n");
-    push(` ${content.slice(10, 14)} 天翼云盘签到`, content);
+	const lineCount = content.split('\n').length;
+    push(` ${getLineIndex(content,lineCount - 4).slice(12, 14)}天翼${getLineIndex(content, lineCount - 1).slice(-12)}`, content);
     recording.erase();
   }
 })();
