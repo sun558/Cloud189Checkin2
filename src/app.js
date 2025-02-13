@@ -217,7 +217,7 @@ async function main() {
     if (userName && password) {
       const userNameInfo = mask(userName, 3, 7);
       try {
-        logger.log(`账户 ${userNameInfo}开始执行`);
+        logger.log(`${index+1}. 账户 ${userNameInfo}开始执行`);
         const cloudClient = new CloudClient(userName, password);
         await cloudClient.login();
         const beforeUserSizeInfo = await cloudClient.getUserSizeInfo();
@@ -336,7 +336,7 @@ function getLineIndex(str, lineIndex) {
   } finally {
     const events = recording.replay();
     const content = events.map((e) => `${e.data.join("")}`).join("  \n");
-	  const lineCount = content.split('\n').length;
+	const lineCount = content.split('\n').length;
     push(` ${getLineIndex(content,lineCount - 4).slice(12, 14)}天翼${getLineIndex(content, lineCount - 1).slice(-12)}`, content);
     recording.erase();
   }
