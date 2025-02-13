@@ -238,7 +238,8 @@ async function main() {
           throw e;
         }
       } finally {
-        logger.log(` `);
+              logger.log(` `);
+	      await delay((Math.random() * 1000) + 2000); // 随机等待2到3秒
       }
     }
   }
