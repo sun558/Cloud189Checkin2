@@ -22,28 +22,30 @@ const wecomBot = require("./push/wecomBot");
 const wxpush = require("./push/wxPusher");
 const accounts = require("../accounts");
 const families = require("../families");
-const pushPlus = require("./push/pushPlus");
 const execThreshold = process.env.EXEC_THRESHOLD || 1;
+const accountPerson = process.env.ACCOUNT_PERSON || 1; //主账号个数
+
 
 const mask = (s, start, end) => s.split("").fill("*", start, end).join("");
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // 任务 1.签到
-const doUserTask = async (cloudClient) => {
-  const tasks = Array.from({ length: execThreshold }, () =>
-    cloudClient.userSign()
-  );
-  const result = (await Promise.all(tasks)).map(
-    (res) =>
-      `个人任务${res.isSign ? "已经签到过了，" : ""}签到获得${
-        res.netdiskBonus
-      }M空间`
-  );
-  return result;
+const doUserTask = async (cloudClient,index) => {
+	if(index < accountPerson){
+		const result = [];
+		const res1 = await cloudClient.userSign();
+		result.push(
+				'个人'+`${res1.isSign ? "已签到过" : ""}获得: ${res1.netdiskBonus}M`
+	);
+		await delay(5000); // 延迟5秒
+		return result;
+	}else{		
+		return "";
+	}
 };
 
-const doFamilyTask = async (cloudClient) => {
+const doFamilyTask = async (cloudClient,index) => {
   const { familyInfoResp } = await cloudClient.getFamilyList();
   if (familyInfoResp) {
     let familyId = null;
@@ -64,17 +66,24 @@ const doFamilyTask = async (cloudClient) => {
     } else {
       familyId = familyInfoResp[0].familyId;
     }
-    logger.info(`执行家庭签到ID:${familyId}`);
-    const tasks = Array.from({ length: execThreshold }, () =>
-      cloudClient.familyUserSign(familyId)
-    );
-    const result = (await Promise.all(tasks)).map(
-      (res) =>
-        `家庭任务${res.signStatus ? "已经签到过了，" : ""}签到获得${
-          res.bonusSpace
-        }M空间`
-    );
-    return result;
+
+	if(index < accountPerson ){
+		const res = await cloudClient.familyUserSign(familyId);
+		const result =  [`家庭${res.signStatus ? "已签到过" : ""}获得: ${res.bonusSpace}M`];
+		return result;
+	}else{
+		const tasks = Array.from({ length: execThreshold }, () =>
+		cloudClient.familyUserSign(familyId)
+		);
+		const result = (await Promise.all(tasks)).map(
+		(res) =>
+			`家庭${res.signStatus ? "已签到过" : ""}获得: ${
+			res.bonusSpace
+			}M`
+		);
+		return result;
+	}
+		
   }
   return [];
 };
@@ -188,47 +197,20 @@ const pushWxPusher = (title, desp) => {
       }
     });
 };
-const pushPlusPusher = (title, desp) => {
-  // 如果没有配置 pushPlus 的 token，则不执行推送
-  if (!(pushPlus.token)) {
-    return;
-  }
-  // 请求体
-  const data = {
-    token: pushPlus.token,
-    title: title,
-    content: desp
-  };
-  // 发送请求
-  superagent
-      .post("http://www.pushplus.plus/send/")
-      .send(data)
-      .end((err, res) => {
-        if (err) {
-          logger.error(`pushPlus 推送失败:${JSON.stringify(err)}`);
-          return;
-        }
-        const json = JSON.parse(res.text);
-        if (json.code !== 200) {
-          logger.error(`pushPlus 推送失败:${JSON.stringify(json)}`);
-        } else {
-          logger.info("pushPlus 推送成功");
-        }
-      });
-};
 
 const push = (title, desp) => {
   pushServerChan(title, desp);
   pushTelegramBot(title, desp);
   pushWecomBot(title, desp);
   pushWxPusher(title, desp);
-  pushPlusPusher(title, desp);
 };
 
 // 开始执行程序
-async function main() {
+async function main() {	
   //用于统计实际容量变化
   const userSizeInfoMap = new Map();
+  let mainAccountCount  = 0 ; //主账号详情循环
+  
   for (let index = 0; index < accounts.length; index += 1) {
     const account = accounts[index];
     const { userName, password } = account;
@@ -243,9 +225,12 @@ async function main() {
           cloudClient,
           userSizeInfo: beforeUserSizeInfo,
         });
-        const result = await doUserTask(cloudClient);
-        result.forEach((r) => logger.log(r));
-        const familyResult = await doFamilyTask(cloudClient);
+		const result = await doUserTask(cloudClient,index);
+		if(result){
+			result.forEach((r) => logger.log(r));
+		}
+		
+        const familyResult = await doFamilyTask(cloudClient,index);
         familyResult.forEach((r) => logger.log(r));
       } catch (e) {
         logger.error(e);
@@ -253,10 +238,12 @@ async function main() {
           throw e;
         }
       } finally {
-        logger.log(`账户 ${userNameInfo}执行完毕`);
+        logger.log(` `);
       }
     }
   }
+	
+  
 
   //数据汇总
   for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap) {
@@ -277,6 +264,70 @@ async function main() {
       ).toFixed(2)}M`
     );
   }
+	logger.log(' ');
+  
+  //主账号家庭详情
+	for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap){
+	   if(mainAccountCount < accountPerson){
+	        const userNameInfo = mask(userName, 3, 7);
+			const afterUserSizeInfo = await cloudClient.getUserSizeInfo();
+			logger.log(`账户 ${userNameInfo}:`);
+			logger.log(`昨天 个人：${ (
+			(userSizeInfo.cloudCapacityInfo.totalSize) /
+			1024 /
+			1024 /
+			1024
+		).toFixed(3)}G, 家庭：${(
+			( userSizeInfo.familyCapacityInfo.totalSize) /
+			1024 /
+			1024 /
+			1024
+		).toFixed(3)}G`);
+		logger.log(`今天 个人：${(
+			(afterUserSizeInfo.cloudCapacityInfo.totalSize) /
+			1024 /
+			1024 /
+			1024
+		).toFixed(3)}G, 家庭：${(
+			(afterUserSizeInfo.familyCapacityInfo.totalSize) /
+			1024 /
+			1024 /
+			1024
+		).toFixed(3)}G`);
+		logger.log(
+		`个人总容量增加：${(
+			(afterUserSizeInfo.cloudCapacityInfo.totalSize -
+			userSizeInfo.cloudCapacityInfo.totalSize) /
+			1024 /
+			1024
+		).toFixed(2)}M,家庭容量增加：${(
+			(afterUserSizeInfo.familyCapacityInfo.totalSize -
+			userSizeInfo.familyCapacityInfo.totalSize) /
+			1024 /
+			1024
+		).toFixed(2)}M`
+		);
+		
+		 mainAccountCount++;
+	   }else{
+			break;
+	   }
+	}
+	
+}
+function getLineIndex(str, lineIndex) {
+  // 参数校验
+  if (typeof str !== 'string' || !Number.isInteger(lineIndex)) {
+    return '';
+  }
+
+  // 单次分割处理（兼容不同系统换行符）
+  const lines = str.split(/\r?\n/);
+  
+  // 处理边界情况
+  return lineIndex >= 0 && lineIndex < lines.length 
+    ? String(lines[lineIndex]).trim() // 移除前后空格
+    : '';
 }
 
 (async () => {
@@ -285,7 +336,8 @@ async function main() {
   } finally {
     const events = recording.replay();
     const content = events.map((e) => `${e.data.join("")}`).join("  \n");
-    push("天翼云盘自动签到任务", content);
+	  const lineCount = content.split('\n').length;
+    push(` ${getLineIndex(content,lineCount - 4).slice(12, 14)}天翼${getLineIndex(content, lineCount - 1).slice(-12)}`, content);
     recording.erase();
   }
 })();
