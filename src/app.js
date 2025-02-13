@@ -36,7 +36,7 @@ const doUserTask = async (cloudClient,index) => {
 		const result = [];
 		const res1 = await cloudClient.userSign();
 		result.push(
-				'个人'+`${res1.isSign ? "已签到" : ""}获得：${res1.netdiskBonus}M`
+				'个人'+`${res1.isSign ? "已签到过" : ""}获得：${res1.netdiskBonus}M`
 	);
 		await delay(5000); // 延迟5秒
 		return result;
@@ -72,7 +72,7 @@ const doFamilyTask = async (cloudClient) => {
     );
     const result = (await Promise.all(tasks)).map(
       (res) =>
-        `家庭${res.signStatus ? "已签到" : ""}获得: ${
+        `家庭${res.signStatus ? "已签到过" : ""}获得: ${
           res.bonusSpace
         }M`
     );
