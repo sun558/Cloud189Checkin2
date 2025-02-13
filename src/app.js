@@ -23,7 +23,7 @@ const wxpush = require("./push/wxPusher");
 const accounts = require("../accounts");
 const families = require("../families");
 const execThreshold = process.env.EXEC_THRESHOLD || 1;
-const accountPerson = process.env.ACCOUNT_PERSON || 1; //主账号个数
+const accountPerson = process.env.ACCOUNT_PERSON || accounts.length; //主账号个数
 
 
 const mask = (s, start, end) => s.split("").fill("*", start, end).join("");
