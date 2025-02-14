@@ -38,7 +38,7 @@ const doUserTask = async (cloudClient,index) => {
 		result.push(
 				'个人'+`${res1.isSign ? "无效" : ""}签到: ${res1.netdiskBonus}M`
 	);
-		; // 延迟5秒
+		await delay(5000); // 延迟5秒
 		return result;
 	}else{		
 		return "";
