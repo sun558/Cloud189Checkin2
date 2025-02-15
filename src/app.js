@@ -230,7 +230,7 @@ async function main() {
 		
         const familyResult = await doFamilyTask(cloudClient,index);
 		const signedMessage = familyResult?.length > 0 
-			? `家庭有效签到${familyResult.length}次 (M)：${familyResult.join(' ')} `
+			? `家庭有效签到${familyResult.length}次(M)：${familyResult.join(' ')} `
 			: '家庭重复无效签到';
 
 			logger.log(signedMessage);
