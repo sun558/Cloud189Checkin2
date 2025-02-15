@@ -36,7 +36,7 @@ const doUserTask = async (cloudClient,index) => {
 		const result = [];
 		const res1 = await cloudClient.userSign();
 		result.push(
-				'个人'+`${res1.isSign ? "无效" : ""}签到: ${res1.netdiskBonus}M`
+				'个人'+`${res1.isSign ? "重复无效签到" : "签到: ${res1.netdiskBonus}M"}`
 	);
 		await delay(5000); // 延迟5秒
 		return result;
@@ -66,7 +66,7 @@ const doFamilyTask = async (cloudClient,index) => {
     } else {
       familyId = familyInfoResp[0].familyId;
     }
-
+	await delay((Math.random() * 1000) + 2000); // 随机等待2到3秒
 	if(index < accountPerson ){
 		const res = await cloudClient.familyUserSign(familyId);
 		return res.signStatus ? undefined : [res.bonusSpace] ;
@@ -230,7 +230,7 @@ async function main() {
 		
         const familyResult = await doFamilyTask(cloudClient,index);
 		const signedMessage = familyResult?.length > 0 
-			? `家庭有效签到${familyResult.length}次：${familyResult.join(' ')}  (M)`
+			? `家庭有效签到${familyResult.length}次 (M)：${familyResult.join(' ')} `
 			: '家庭重复无效签到';
 
 			logger.log(signedMessage);
@@ -242,7 +242,7 @@ async function main() {
         }
       } finally {
         logger.log(` `);
-		await delay((Math.random() * 1000) + 2000); // 随机等待2到3秒
+		
       }
     }
   }
