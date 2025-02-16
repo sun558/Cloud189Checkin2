@@ -36,7 +36,7 @@ const doUserTask = async (cloudClient,index) => {
 		const result = [];
 		const res1 = await cloudClient.userSign();
 		result.push(
-				'个人'+`${res1.isSign ? "重复无效签到" : "签到: ${res1.netdiskBonus}M"}`
+				'个人'+`${res1.isSign ? "重复无效签到" : "签到: res1.netdiskBonusM"}`
 	);
 		await delay(5000); // 延迟5秒
 		return result;
