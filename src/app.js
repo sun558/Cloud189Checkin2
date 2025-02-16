@@ -208,6 +208,7 @@ async function main() {
   //用于统计实际容量变化
   const userSizeInfoMap = new Map();
   let mainAccountCount  = 0 ; //主账号详情循环
+  let NonPrimaryCount = 0 ; //非主账号变化循环
   
   for (let index = 0; index < accounts.length; index += 1) {
     const account = accounts[index];
@@ -249,24 +250,31 @@ async function main() {
 	
   
 
-  //数据汇总
+  //非主账号变化详情
   for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap) {
     const userNameInfo = mask(userName, 3, 7);
     const afterUserSizeInfo = await cloudClient.getUserSizeInfo();
-    logger.log(`账户 ${userNameInfo}实际容量变化:`);
-    logger.log(
-      `个人总容量增加：${(
-        (afterUserSizeInfo.cloudCapacityInfo.totalSize -
-          userSizeInfo.cloudCapacityInfo.totalSize) /
-        1024 /
-        1024
-      ).toFixed(2)}M,家庭容量增加：${(
-        (afterUserSizeInfo.familyCapacityInfo.totalSize -
-          userSizeInfo.familyCapacityInfo.totalSize) /
-        1024 /
-        1024
-      ).toFixed(2)}M`
-    );
+	if(NonPrimaryCount < accountPerson ){
+		NonPrimaryCount++;
+		continue;
+	}
+	if(afterUserSizeInfo.familyCapacityInfo.totalSize != userSizeInfo.familyCapacityInfo.totalSize ){
+	  logger.log(`非主账户 ${userNameInfo}实际容量变化:`);
+		logger.log(
+		`个人总容量增加：${(
+			(afterUserSizeInfo.cloudCapacityInfo.totalSize -
+			userSizeInfo.cloudCapacityInfo.totalSize) /
+			1024 /
+			1024
+		).toFixed(2)}M,家庭容量增加：${(
+			(afterUserSizeInfo.familyCapacityInfo.totalSize -
+			userSizeInfo.familyCapacityInfo.totalSize) /
+			1024 /
+			1024
+		).toFixed(2)}M`
+		);
+	}
+    NonPrimaryCount++;
   }
 	logger.log(' ');
   
