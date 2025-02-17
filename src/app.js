@@ -66,7 +66,7 @@ const doFamilyTask = async (cloudClient,index) => {
     } else {
       familyId = familyInfoResp[0].familyId;
     }
-	await delay((Math.random() * 6000) + 3000); // 随机等待3到6秒
+	await delay((Math.random() * 3000) + 3000); // 随机等待3到6秒
 	if(index < accountPerson ){
 		const res = await cloudClient.familyUserSign(familyId);
 		return res.signStatus ? undefined : [res.bonusSpace] ;
