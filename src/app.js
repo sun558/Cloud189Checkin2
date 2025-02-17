@@ -66,7 +66,7 @@ const doFamilyTask = async (cloudClient,index) => {
     } else {
       familyId = familyInfoResp[0].familyId;
     }
-	await delay((Math.random() * 3000) + 3000); // 随机等待3到6秒
+	await delay((Math.random() * 2000) + 1000); // 随机等待1到3秒
 	if(index < accountPerson ){
 		const res = await cloudClient.familyUserSign(familyId);
 		return res.signStatus ? undefined : [res.bonusSpace] ;
@@ -235,7 +235,8 @@ async function main() {
 			: '家庭重复无效签到';
 
 			logger.log(signedMessage);
-        
+	      
+        await delay((Math.random() * 3000) + 3000); // 随机等待3到6秒
       } catch (e) {
         logger.error(e);
         if (e.code === "ETIMEDOUT") {
