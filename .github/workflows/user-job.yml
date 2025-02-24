@@ -10,7 +10,7 @@ on:
     - cron: 20 22 * * *
     
 jobs:
-  build-and-deploy-user:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment: user
     steps:
