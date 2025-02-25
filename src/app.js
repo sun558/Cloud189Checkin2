@@ -52,15 +52,13 @@ const doFamilyTask = async (cloudClient,index) => {
     //指定家庭签到
     if (families.length > 0) {
       const tagetFamily = familyInfoResp.find((familyInfo) =>
-        families.includes(familyInfo.remarkName)
+        families.includes(familyInfo.familyId)
       );
       if (tagetFamily) {
         familyId = tagetFamily.familyId;
       } else {
         return [
-          `没有加入到指定家庭分组${families
-            .map((family) => mask(family, 3, 7))
-            .toString()}`,
+          `没有加入到指定家庭分组`,
         ];
       }
     } else {
