@@ -64,17 +64,17 @@ const doFamilyTask = async (cloudClient,index) => {
     } else {
       familyId = familyInfoResp[0].familyId;
     }
-
+    
 	if(index < accountPerson ){
 		const res = await cloudClient.familyUserSign(familyId);
 		return res.signStatus ? undefined : [res.bonusSpace] ;
+		
 	}else{
 		const tasks = Array.from({ length: execThreshold }, () =>
 		cloudClient.familyUserSign(familyId)
 		);
 		// 等待所有任务完成，并过滤出尚未签到的家庭用户
 		const results = (await Promise.all(tasks)).filter(res => !res.signStatus);
-            
 		return  results.length === 0 ? 
 				undefined : results.map((res) => res.bonusSpace);
 		
@@ -229,8 +229,10 @@ async function main() {
 		
         const familyResult = await doFamilyTask(cloudClient,index);
 		const signedMessage = familyResult?.length > 0 
-			? `家庭有效签到${familyResult.length}次(M)：${familyResult.join(' ')} `
-			: '家庭重复无效签到';
+				? familyResult.every(item => typeof item === 'number')
+				? `家庭有效签到${familyResult.length}次(M): ${familyResult.join(' ')}`
+				: `${familyResult.join(' ')}`
+				: '家庭重复无效签到';
 
 			logger.log(signedMessage);
         await delay((Math.random() * 3000) + 3000); // 随机等待3到6秒
