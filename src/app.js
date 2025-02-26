@@ -252,12 +252,13 @@ async function main() {
 
   //非主账号变化详情
   for (const [userName, { cloudClient, userSizeInfo }] of userSizeInfoMap) {
-    const userNameInfo = mask(userName, 3, 7);
-    const afterUserSizeInfo = await cloudClient.getUserSizeInfo();
-	if(NonPrimaryCount < accountPerson ){
+    if(NonPrimaryCount < accountPerson ){
 		NonPrimaryCount++;
 		continue;
 	}
+    const userNameInfo = mask(userName, 3, 7);
+    const afterUserSizeInfo = await cloudClient.getUserSizeInfo();
+	
 	if(afterUserSizeInfo.familyCapacityInfo.totalSize != userSizeInfo.familyCapacityInfo.totalSize ){
 	  logger.log(`非主账户 ${userNameInfo}实际容量变化:`);
 		logger.log(
