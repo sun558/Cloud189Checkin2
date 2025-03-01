@@ -1,13 +1,13 @@
 name: Cloud user2 in action
 on:
-##  push:
-##    branches:
-##      - main
-##  watch:
-##    types: started
+  push:
+    branches:
+      - main
+  watch:
+    types: started
   workflow_dispatch:
-##  schedule:
-##    - cron: 20 23 * * *
+  schedule:
+    - cron: 20 23 * * *
     
 jobs:
   build-and-deploy-user2:
