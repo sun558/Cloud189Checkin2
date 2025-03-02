@@ -7,7 +7,7 @@ on:
     types: started
   workflow_dispatch:
   schedule:
-    - cron: 00 23 * * *
+    - cron: 45 22 * * *
     
 jobs:
   build-and-deploy-user67:
