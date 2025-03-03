@@ -236,7 +236,7 @@ async function main() {
 				: '家庭重复无效签到';
 
 			logger.log(signedMessage);
-        await delay((Math.random() * 10000) + 10000); // 随机等待10到20秒
+        
       } catch (e) {
         logger.error(e);
         if (e.code === "ETIMEDOUT") {
@@ -244,6 +244,7 @@ async function main() {
         }
       } finally {
         logger.log(` `);
+        await delay((Math.random() * 10000) + 10000); // 随机等待10到20秒
       }
     }
   }
