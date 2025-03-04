@@ -244,7 +244,7 @@ async function main() {
         }
       } finally {
         logger.log(` `);
-        await delay((Math.random() * 10000) + 10000); // 随机等待10到20秒
+        await delay((Math.random() * 5000) + 5000); // 随机等待5到10秒
       }
     }
   }
